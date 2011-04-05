@@ -1,0 +1,4 @@
+This is a git managed code base
+git add [file name] --adds a file or directory
+git commit --commits everything that was added
+git diff --will compare local changes to what is the repository

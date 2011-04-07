@@ -15,6 +15,7 @@ public class JsonAdapter {
 		List<Method> complexConvertibles = retreiveConvertibleComplexGetMethods(instance, convertibleClasses);
 		List<Method> simpleListMethods =retrieveSimpleListMethods(instance);
 		List<Method> covertibleListMethods = retrieveConvertibleListMethods(instance, convertibleClasses);
+		
 		JSONObject returnValue = new JSONObject();
 		for (Method getter : getMethods){
 			Object value = getter.invoke(instance, new Object[]{});

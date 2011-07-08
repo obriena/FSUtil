@@ -4,6 +4,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +17,7 @@ public class JsonAdapter {
 		List<Method> complexConvertibles = retreiveConvertibleComplexGetMethods(instance, convertibleClasses);
 		List<Method> simpleListMethods =retrieveSimpleListMethods(instance);
 		List<Method> covertibleListMethods = retrieveConvertibleListMethods(instance, convertibleClasses);
+		List<Method> convertibleMapMethods = retrieveCovertibleMapMethods(instance, convertibleClasses);
 		
 		JSONObject returnValue = new JSONObject();
 		for (Method getter : getMethods){
@@ -57,33 +60,99 @@ public class JsonAdapter {
 				}
 			}
 		}
+		if (convertibleMapMethods.size() > 0){
+			
+			for (Method m : convertibleMapMethods){
+				JSONObject object = new JSONObject();
+				Map mappedValues = (Map)m.invoke(instance, null);
+				Set keys = mappedValues.keySet();
+				for (Object key : keys){
+					Object valueObject = mappedValues.get(key);
+					JSONArray valueArray = new JSONArray();
+					if (valueObject instanceof List){
+						List listValue = (List) valueObject;
+						for (Object lv : listValue){
+							if (goodreturnType(lv.getClass())){
+								valueArray.put(lv);
+							} else {
+								JSONObject convertedObject = JsonAdapter.objectTypeToJson(lv, null, false);
+								valueArray.put(convertedObject);
+							}
+						}
+					} else {
+						//not a list
+						if (goodreturnType(valueObject.getClass())){
+							valueArray.put(valueObject);
+						} else {
+							JSONObject convertedObject = JsonAdapter.objectTypeToJson(valueObject, null, false);
+							valueArray.put(convertedObject);
+						}
+					}
+					object.put(String.valueOf(key), valueArray);
+				}
+				returnValue.put(getKey(m.getName(), makeKeysLowerCase), object);
+			}
+		}
 		return returnValue;
 	}
 	
-	private static List<Method> retrieveConvertibleListMethods(Object instance, Class convertibleClasses) {
+	/**
+	 * iterate over the getter methods of the instance object looking for maps that we know how to convert
+	 * @param instance
+	 * @param convertibleClasses
+	 * @return
+	 * @throws InvocationTargetException 
+	 * @throws IllegalAccessException 
+	 * @throws IllegalArgumentException 
+	 */
+	private static List<Method> retrieveCovertibleMapMethods(Object instance, Class convertibleClasses) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+		ArrayList<Method> getMethods = retrieveAllGetMethods(instance);
+		ArrayList<Method> methodList = new ArrayList<Method>();
+		for (Method m : getMethods){
+			if (m.getParameterTypes().length == 0){
+				Object value = m.invoke(instance, null);
+				if (value instanceof Map){
+					methodList.add(m);
+				}
+			}
+		}
+		return methodList;
+	}
+
+	private static ArrayList<Method> retrieveAllGetMethods(Object instance){
 		Method[] methods = instance.getClass().getMethods();
 		ArrayList<Method> methodList = new ArrayList<Method>();
 		for (Method m : methods){
 			if (m.getName().startsWith("get")){
-				try {
-					Object value = m.invoke(instance, null);
-					if (value instanceof List){
-						List testList = (List) value;
-						if (testList.size() > 0){
-							Object o = testList.get(0);
-							 captureMethodsThatReturnTypesOfConcern(convertibleClasses, methodList, m, o);
-						}
+				methodList.add(m);
+			}
+		}
+		return methodList;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<Method> retrieveConvertibleListMethods(Object instance, Class convertibleClasses) {
+		ArrayList<Method> getMethodList = retrieveAllGetMethods(instance);
+		ArrayList<Method> methodList = new ArrayList<Method>();
+		for (Method m : getMethodList){
+			try {
+				Object value = m.invoke(instance, null);
+				if (value instanceof List){
+					List testList = (List) value;
+					if (testList.size() > 0){
+						Object o = testList.get(0);
+						 captureMethodsThatReturnTypesOfConcern(convertibleClasses, methodList, m, o);
 					}
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
 				}
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
 			}
 		}
 		return methodList;
@@ -91,31 +160,31 @@ public class JsonAdapter {
 
 	@SuppressWarnings("unchecked")
 	private static List<Method> retrieveSimpleListMethods(Object instance){
-		Method[] methods = instance.getClass().getMethods();
+		ArrayList<Method> getMethodList = retrieveAllGetMethods(instance);
 		ArrayList<Method> methodList = new ArrayList<Method>();
-		for (Method m : methods){
-			if (m.getName().startsWith("get")){
-				try {
-					Object value = m.invoke(instance, null);
-					if (value instanceof List){
-						List testList = (List) value;
-						if (testList.size() > 0){
-							Object o = testList.get(0);
-							if (o.getClass().isPrimitive() || o instanceof String){
-								methodList.add(m);
-							}
+		for (Method m : getMethodList){
+			try {
+				Object value = m.invoke(instance, null);
+				if (value instanceof List){
+					List testList = (List) value;
+					if (testList.size() > 0){
+						Object o = testList.get(0);
+						if (o.getClass().isPrimitive() || o instanceof String || o instanceof Integer || o instanceof Float || o instanceof Double){
+							methodList.add(m);
 						}
+					} else {
+						methodList.add(m);
 					}
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (InvocationTargetException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
 				}
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
 			}
 		}
 		return methodList;
@@ -126,29 +195,27 @@ public class JsonAdapter {
  		if (convertibleClasses == null) {
 			return null;
 		}
-		Method[] methods = instance.getClass().getMethods();
+		ArrayList<Method> getMethodList = retrieveAllGetMethods(instance);
 		ArrayList<Method> methodList = new ArrayList<Method>();
 		
-		for (Method method : methods){
-			if (method.getName().startsWith("get")){
-				Object value = null;
-				try {
-					value = method.invoke(instance, null);
-				} catch (IllegalArgumentException e) {
-				//	e.printStackTrace();
-				} catch (InvocationTargetException e) {
-				//	e.printStackTrace();
-				}
-				if (value != null){
-					if (value instanceof ArrayList){
-						 List aList = (ArrayList)value;
-						 if (aList.size() > 0){
-							 Object obj = aList.get(0);
-							 captureMethodsThatReturnTypesOfConcern(convertibleClasses, methodList, method, obj);
-						 }
-					} else {
-						captureMethodsThatReturnTypesOfConcern(convertibleClasses, methodList, method, value);
-					}
+		for (Method method : getMethodList){
+			Object value = null;
+			try {
+				value = method.invoke(instance, null);
+			} catch (IllegalArgumentException e) {
+			//	e.printStackTrace();
+			} catch (InvocationTargetException e) {
+			//	e.printStackTrace();
+			}
+			if (value != null){
+				if (value instanceof ArrayList){
+					 List aList = (ArrayList)value;
+					 if (aList.size() > 0){
+						 Object obj = aList.get(0);
+						 captureMethodsThatReturnTypesOfConcern(convertibleClasses, methodList, method, obj);
+					 }
+				} else {
+					captureMethodsThatReturnTypesOfConcern(convertibleClasses, methodList, method, value);
 				}
 			}
 		}
@@ -157,6 +224,9 @@ public class JsonAdapter {
 
 	private static void captureMethodsThatReturnTypesOfConcern(Class convertibleClasses, ArrayList<Method> methodList, Method method, Object value) {
 		Class[] interfaces = value.getClass().getInterfaces();
+		if (convertibleClasses == null){
+			convertibleClasses = value.getClass();
+		}
 		for (Class interfaceType : interfaces){
 			if(interfaceType.getSimpleName().equals(convertibleClasses.getSimpleName())){
 				methodList.add(method);
@@ -200,6 +270,14 @@ public class JsonAdapter {
 		if (returnType.isPrimitive()){
 			isGood = true;
 		} else if (returnType.getName().equals("java.lang.String")){
+			isGood = true;
+		} else if (returnType.getName().equals("java.lang.Integer")){
+			isGood = true;
+		} else if (returnType.getName().equals("java.lang.Long")){
+			isGood = true;
+		} else if (returnType.getName().equals("java.lang.Double")){
+			isGood = true;
+		} else if (returnType.getName().equals("java.lang.Float")){
 			isGood = true;
 		}
 		

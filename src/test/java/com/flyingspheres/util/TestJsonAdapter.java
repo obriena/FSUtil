@@ -2,7 +2,9 @@ package com.flyingspheres.util;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.Assert;
 
@@ -15,6 +17,10 @@ public class TestJsonAdapter {
 	SimpleTester simpleTester;
 	ComplexTester complexTester;
 	VeryComplexTester vComplex;
+	ListTester listTester;
+	ListTester listTester2;
+	MapTester mapTest;
+	MapTester mapTest2;
 	
 	@Before
 	public void setup(){
@@ -40,6 +46,41 @@ public class TestJsonAdapter {
 		cTestList.add(complexTester);
 		vComplex.setComplexTesterList(cTestList);
 		vComplex.setSimpleTesterList(testList);
+		
+		List<Integer> intList = new ArrayList<Integer>();
+		for (int a  =0; a < 10; a++){
+			intList.add(a *100);
+		}
+		listTester = new ListTester();
+		listTester.setIntList(intList);
+		
+		List<Integer> emptyList = new ArrayList<Integer>();
+		listTester2 = new ListTester();
+		listTester2.setIntList(emptyList);
+		
+		Map<String, List<String>>testingMap = new HashMap<String, List<String>>();
+		testingMap.put("Dad", new ArrayList<String>());
+		testingMap.put("Mom", new ArrayList<String>());
+		testingMap.put("Son", new ArrayList<String>());
+		testingMap.put("Daughter", new ArrayList<String>());
+		testingMap.get("Dad").add("Aaron");
+		testingMap.get("Mom").add("Amy");
+		testingMap.get("Son").add("Tristan");
+		testingMap.get("Daughter").add("Rhiannon");
+		testingMap.get("Daughter").add("Anastasia");
+		
+		Map<String, List<SimpleTester>>complexMap = new HashMap<String, List<SimpleTester>>();
+		complexMap.put("test", new ArrayList<SimpleTester>());
+		complexMap.get("test").add(simpleTester);
+		complexMap.get("test").add(simpleTester);
+		complexMap.get("test").add(simpleTester);
+		
+		
+		mapTest = new MapTester();
+		mapTest.setObjectMap(testingMap);
+		
+		mapTest2 = new MapTester();
+		mapTest2.setObjectMap(complexMap);
 	}
 	
 	@Test
@@ -143,6 +184,61 @@ public class TestJsonAdapter {
 		}
 	}	
 	
+	@Test
+	public void testListTester(){
+		try {
+			JSONObject jsonObject = JsonAdapter.objectTypeToJson(listTester, null, false);
+			Assert.assertNotNull(jsonObject);
+			Assert.assertTrue(!jsonObject.toString().equals("{}"));
+			System.out.println("EmptyList test: " + jsonObject.toString(3));
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+			Assert.assertTrue(false);
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+			Assert.assertTrue(false);
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+			Assert.assertTrue(false);
+		} catch (JSONException e) {
+			e.printStackTrace();
+			Assert.assertTrue(false);
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+			Assert.assertTrue(false);
+		}
+	}
+	
+	@Test 
+	public void testEmptyListTester(){
+		try{
+			JSONObject jsonObject = JsonAdapter.objectTypeToJson(listTester2, null, false);
+			System.out.println(jsonObject.toString(3));
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void testMapper(){
+		try{
+			JSONObject jsonMap = JsonAdapter.objectTypeToJson(mapTest, null, false);
+			System.out.println("Json Map:\n" + jsonMap.toString(3));
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void testComplexMapper(){
+		try{
+			JSONObject jsonMap = JsonAdapter.objectTypeToJson(mapTest2, null, false);
+			System.out.println("Json Map:\n" + jsonMap.toString(3));
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
 	private class SimpleTester implements Convertible{
 		private String stringValue;
 		private int intValue;
@@ -207,6 +303,19 @@ public class TestJsonAdapter {
 		
 	}
 	
+	private class ListTester{
+		List<Integer> intList;
+
+		public List<Integer> getIntList() {
+			return intList;
+		}
+
+		public void setIntList(List<Integer> intList) {
+			this.intList = intList;
+		}
+		
+	}
+	
 	private class ComplexTester implements Convertible{
 		SimpleTester simpleTester;
 		List<String> names;
@@ -228,6 +337,37 @@ public class TestJsonAdapter {
 		}
 		public void setNames(List<String> names) {
 			this.names = names;
+		}
+		
+	}
+	
+	private class MapTester {
+		Map objectMap;
+		String one = "one";
+		String two = "two";
+
+		public Map getObjectMap() {
+			return objectMap;
+		}
+
+		public void setObjectMap(Map objectMap) {
+			this.objectMap = objectMap;
+		}
+
+		public String getOne() {
+			return one;
+		}
+
+		public void setOne(String one) {
+			this.one = one;
+		}
+
+		public String getTwo() {
+			return two;
+		}
+
+		public void setTwo(String two) {
+			this.two = two;
 		}
 		
 	}

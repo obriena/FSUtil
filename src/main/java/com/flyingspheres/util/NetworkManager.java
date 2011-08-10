@@ -51,9 +51,6 @@ public class NetworkManager {
 	}
 	
 	public static String postData(String postUrl, File fileToLoad, Map<String, String>paramterMap) throws Exception{
-		byte[] buff = new byte[1024];
-		String responseString = null;
-		
 		DefaultHttpClient client = new DefaultHttpClient();
 		client.getParams().setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 		
@@ -73,16 +70,7 @@ public class NetworkManager {
 
 		HttpResponse response = client.execute(httpPost);		
 		InputStream is= response.getEntity().getContent();
-		int amtRead = is.read(buff);
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		while (amtRead > -1){
-			bos.write(buff, 0, amtRead);
-			buff = null;
-			buff = new byte[1024];
-			amtRead = is.read(buff);
-		}
-		responseString = new String(bos.toByteArray());
+		return StreamReader.convertStreamToString(is);
 		
-		return responseString;
 	}
 }

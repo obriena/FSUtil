@@ -1,9 +1,7 @@
 package com.flyingspheres.util;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
@@ -72,5 +70,33 @@ public class NetworkManager {
 		InputStream is= response.getEntity().getContent();
 		return StreamReader.convertStreamToString(is);
 		
+	}
+	
+	public static String callServiceViaGet(String urlString, Map<String, String> parameters, Map<String, String> headers){
+		StringBuilder response = new StringBuilder();
+		URL url = null;
+		try{
+			url = new URL(urlString);
+			URLConnection connection = url.openConnection();
+			
+			connection.setConnectTimeout(5000);
+			connection.setDoOutput(true);//I think this is really for post requests
+			for (String key : headers.keySet()){
+				connection.setRequestProperty(key, headers.get(key));
+			}
+			InputStream is = connection.getInputStream();
+			byte[] bytes = new byte[1024];
+            int amtRead = is.read(bytes);
+            while (amtRead > 0){
+             	response.append(new String(bytes, 0, amtRead));
+             	bytes = null;
+             	bytes = new byte[1024];
+             	amtRead = is.read(bytes);
+            }
+            connection.getInputStream().close();
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		return response.toString();
 	}
 }

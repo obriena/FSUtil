@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 import org.apache.http.HttpResponse;
@@ -36,7 +37,7 @@ public class NetworkManager {
 			byte[] bytes = new byte[1024];
             int amtRead = is.read(bytes);
             while (amtRead > 0){
-             	response.append(new String(bytes, 0, amtRead));
+             	response.append(new String(bytes, 0, amtRead, Charset.forName("UTF-8")));
              	bytes = null;
              	bytes = new byte[1024];
              	amtRead = is.read(bytes);

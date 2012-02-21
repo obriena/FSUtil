@@ -1,6 +1,7 @@
 package com.flyingspheres.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,9 +16,13 @@ public class FunctionalTestNetworkManager {
 
 	@Test
 	public void testHttpRetrieval(){
-		String response = NetworkManager.retrieveRawContent(TEST_URL);
-		Assert.assertNotNull(response);
-		Assert.assertTrue(response.contains("I&#39;m Feeling Lucky"));
+		try {
+			String response = NetworkManager.retrieveRawContent(TEST_URL);
+			Assert.assertNotNull(response);
+			Assert.assertTrue(response.contains("I&#39;m Feeling Lucky"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Test

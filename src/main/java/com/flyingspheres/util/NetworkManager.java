@@ -2,7 +2,9 @@ package com.flyingspheres.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
@@ -25,14 +27,13 @@ public class NetworkManager {
 	 * perform a get request and return the response from the server
 	 * @param httpUrl
 	 * @return content retrieved based on param
+	 * @throws IOException 
 	 */
-	public static String retrieveRawContent(String string) {
+	public static String retrieveRawContent(String string) throws IOException {
         StringBuilder response = new StringBuilder();
 		URL url = null;
-		try{
-			url = new URL(string);
-			URLConnection connection = url.openConnection();
 
+<<<<<<< HEAD
 			InputStream is = connection.getInputStream();
 			byte[] bytes = new byte[1024];
             int amtRead = is.read(bytes);
@@ -46,6 +47,22 @@ public class NetworkManager {
 		} catch (Exception e){
 			e.printStackTrace();
 		}
+=======
+		url = new URL(string);
+		URLConnection connection = url.openConnection();
+
+		InputStream is = connection.getInputStream();
+		byte[] bytes = new byte[1024];
+        int amtRead = is.read(bytes);
+        while (amtRead > 0){
+         	response.append(new String(bytes, 0, amtRead));
+         	bytes = null;
+         	bytes = new byte[1024];
+         	amtRead = is.read(bytes);
+        }
+        connection.getInputStream().close();
+
+>>>>>>> tweaked a method to handle posting better
 		return response.toString();
 	}
 	

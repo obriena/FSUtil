@@ -8,7 +8,7 @@ public class ExceptionAdapter {
 	/**
 	 * convert an exception into a string for easier logging
 	 */
-	public static String convertThrowable(Exception e) {
+	public static String convertThrowable(Throwable e) {
         OutputStream os = new ByteArrayOutputStream();
         PrintWriter writer= new PrintWriter(os);
         e.printStackTrace(writer);
